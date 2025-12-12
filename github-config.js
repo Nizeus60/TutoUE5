@@ -26,7 +26,7 @@ const githubConfig = {
   // 4. Coche uniquement : "repo" (Full control of private repositories)
   // 5. Generate token
   // 6. COPIE le token ici (tu le verras qu'une fois !)
-  token: "", // ← Colle ton token ici (optionnel)
+  token: "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", // ← Colle ton token ici (optionnel)
   
   // Délai de refresh en secondes (combien de temps entre chaque vérification)
   refreshInterval: 10 // Vérifie les nouveaux post-its toutes les 10 secondes
