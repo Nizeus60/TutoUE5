@@ -1,0 +1,869 @@
+/* ============================================
+   NIZOZ STUDIO - DOCUMENTATION SYSTEM
+   Style principal avec thème Dark/Light
+   ============================================ */
+
+/* ====== VARIABLES CSS (Personnalisables) ====== */
+:root {
+  /* Couleur principale (modifiable via l'interface) */
+  --primary-color: #00aaff;
+  --primary-hover: #0088cc;
+  --primary-light: #33bbff;
+  
+  /* Mode Light */
+  --bg-primary-light: #ffffff;
+  --bg-secondary-light: #f5f5f5;
+  --bg-tertiary-light: #e8e8e8;
+  --text-primary-light: #1a1a1a;
+  --text-secondary-light: #4a4a4a;
+  --border-light: #d0d0d0;
+  --shadow-light: rgba(0, 0, 0, 0.1);
+  
+  /* Mode Dark */
+  --bg-primary-dark: #1a1a1a;
+  --bg-secondary-dark: #2a2a2a;
+  --bg-tertiary-dark: #363636;
+  --text-primary-dark: #f0f0f0;
+  --text-secondary-dark: #b0b0b0;
+  --border-dark: #404040;
+  --shadow-dark: rgba(0, 0, 0, 0.5);
+  
+  /* Couleurs de status */
+  --success: #4caf50;
+  --warning: #ff9800;
+  --error: #f44336;
+  --info: #2196f3;
+  
+  /* Couleurs post-its */
+  --postit-yellow: #fff59d;
+  --postit-green: #c8e6c9;
+  --postit-pink: #f8bbd0;
+  --postit-blue: #bbdefb;
+  --postit-orange: #ffe0b2;
+}
+
+/* ====== THÈME PAR DÉFAUT (Dark) ====== */
+body {
+  --bg-primary: var(--bg-primary-dark);
+  --bg-secondary: var(--bg-secondary-dark);
+  --bg-tertiary: var(--bg-tertiary-dark);
+  --text-primary: var(--text-primary-dark);
+  --text-secondary: var(--text-secondary-dark);
+  --border-color: var(--border-dark);
+  --shadow-color: var(--shadow-dark);
+}
+
+/* Mode Light */
+body.light-mode {
+  --bg-primary: var(--bg-primary-light);
+  --bg-secondary: var(--bg-secondary-light);
+  --bg-tertiary: var(--bg-tertiary-light);
+  --text-primary: var(--text-primary-light);
+  --text-secondary: var(--text-secondary-light);
+  --border-color: var(--border-light);
+  --shadow-color: var(--shadow-light);
+}
+
+/* ====== RESET & BASE ====== */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  line-height: 1.6;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* ====== LAYOUT PRINCIPAL ====== */
+.app-container {
+  display: flex;
+  min-height: 100vh;
+}
+
+/* ====== SIDEBAR (Menu latéral) ====== */
+.sidebar {
+  width: 280px;
+  background-color: var(--bg-secondary);
+  border-right: 1px solid var(--border-color);
+  position: fixed;
+  height: 100vh;
+  overflow-y: auto;
+  z-index: 1000;
+  transition: all 0.3s ease;
+}
+
+.sidebar-header {
+  padding: 24px 20px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.logo {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--primary-color);
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.logo-icon {
+  font-size: 28px;
+}
+
+/* Navigation */
+.nav-section {
+  padding: 20px 0;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.nav-title {
+  padding: 0 20px 10px 20px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+  letter-spacing: 1px;
+}
+
+.nav-list {
+  list-style: none;
+}
+
+.nav-item {
+  margin: 2px 10px;
+}
+
+.nav-link {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 16px;
+  color: var(--text-primary);
+  text-decoration: none;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+  font-size: 14px;
+}
+
+.nav-link:hover {
+  background-color: var(--bg-tertiary);
+  color: var(--primary-color);
+}
+
+.nav-link.active {
+  background-color: var(--primary-color);
+  color: white;
+}
+
+.nav-icon {
+  font-size: 18px;
+  width: 20px;
+  text-align: center;
+}
+
+/* ====== CONTENU PRINCIPAL ====== */
+.main-content {
+  margin-left: 280px;
+  flex: 1;
+  min-height: 100vh;
+}
+
+/* Header du contenu */
+.content-header {
+  background-color: var(--bg-secondary);
+  border-bottom: 1px solid var(--border-color);
+  padding: 20px 40px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  backdrop-filter: blur(10px);
+}
+
+.header-controls {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  justify-content: flex-end;
+}
+
+/* Barre de recherche */
+.search-container {
+  position: relative;
+  flex: 1;
+  max-width: 500px;
+}
+
+.search-input {
+  width: 100%;
+  padding: 10px 40px 10px 16px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  background-color: var(--bg-tertiary);
+  color: var(--text-primary);
+  font-size: 14px;
+  transition: all 0.2s ease;
+}
+
+.search-input:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(0, 170, 255, 0.1);
+}
+
+.search-icon {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-secondary);
+  pointer-events: none;
+}
+
+/* Boutons du header */
+.btn-icon {
+  width: 40px;
+  height: 40px;
+  border: none;
+  border-radius: 8px;
+  background-color: var(--bg-tertiary);
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+}
+
+.btn-icon:hover {
+  background-color: var(--primary-color);
+  color: white;
+  transform: scale(1.05);
+}
+
+.btn-icon.active {
+  background-color: var(--primary-color);
+  color: white;
+}
+
+/* Corps du contenu */
+.content-body {
+  padding: 40px;
+  max-width: 1200px;
+}
+
+/* ====== COMPOSANTS DE CONTENU ====== */
+
+/* Titres */
+h1, h2, h3, h4, h5, h6 {
+  color: var(--text-primary);
+  margin-bottom: 16px;
+  font-weight: 600;
+  position: relative;
+}
+
+h1 {
+  font-size: 2.5rem;
+  margin-bottom: 24px;
+  padding-bottom: 16px;
+  border-bottom: 2px solid var(--border-color);
+}
+
+h2 {
+  font-size: 2rem;
+  margin-top: 40px;
+  padding-left: 16px;
+  border-left: 4px solid var(--primary-color);
+}
+
+h3 {
+  font-size: 1.5rem;
+  margin-top: 32px;
+}
+
+h4 {
+  font-size: 1.25rem;
+  margin-top: 24px;
+}
+
+/* Ancres pour les liens directs */
+.anchor {
+  display: inline-block;
+  width: 20px;
+  margin-left: -24px;
+  padding-right: 4px;
+  text-decoration: none;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  color: var(--text-secondary);
+}
+
+h1:hover .anchor,
+h2:hover .anchor,
+h3:hover .anchor,
+h4:hover .anchor {
+  opacity: 1;
+}
+
+/* Paragraphes */
+p {
+  margin-bottom: 16px;
+  color: var(--text-secondary);
+  line-height: 1.8;
+}
+
+/* Listes */
+ul, ol {
+  margin-left: 20px;
+  margin-bottom: 16px;
+  color: var(--text-secondary);
+}
+
+li {
+  margin-bottom: 8px;
+}
+
+/* Liens */
+a {
+  color: var(--primary-color);
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+a:hover {
+  color: var(--primary-hover);
+  text-decoration: underline;
+}
+
+/* ====== BLOCS DE CODE ====== */
+.code-block {
+  background-color: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 20px;
+  margin: 20px 0;
+  overflow-x: auto;
+  position: relative;
+}
+
+.code-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.code-title {
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+
+.btn-copy {
+  padding: 6px 12px;
+  font-size: 12px;
+  background-color: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-copy:hover {
+  background-color: var(--primary-color);
+  color: white;
+  border-color: var(--primary-color);
+}
+
+pre {
+  margin: 0;
+  padding: 0;
+  overflow-x: auto;
+}
+
+code {
+  font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+  font-size: 14px;
+  color: var(--text-primary);
+  line-height: 1.6;
+}
+
+/* Code inline */
+:not(pre) > code {
+  background-color: var(--bg-tertiary);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 0.9em;
+  color: var(--primary-color);
+}
+
+/* ====== BOÎTES D'INFO ====== */
+.info-box {
+  padding: 16px 20px;
+  border-radius: 8px;
+  margin: 20px 0;
+  border-left: 4px solid;
+  display: flex;
+  gap: 12px;
+}
+
+.info-box-icon {
+  font-size: 24px;
+  flex-shrink: 0;
+}
+
+.info-box-content h4 {
+  margin: 0 0 8px 0;
+  font-size: 16px;
+}
+
+.info-box-content p:last-child {
+  margin-bottom: 0;
+}
+
+/* Types de boîtes */
+.info-box.tip {
+  background-color: rgba(76, 175, 80, 0.1);
+  border-color: var(--success);
+}
+
+.info-box.tip .info-box-icon {
+  color: var(--success);
+}
+
+.info-box.warning {
+  background-color: rgba(255, 152, 0, 0.1);
+  border-color: var(--warning);
+}
+
+.info-box.warning .info-box-icon {
+  color: var(--warning);
+}
+
+.info-box.danger {
+  background-color: rgba(244, 67, 54, 0.1);
+  border-color: var(--error);
+}
+
+.info-box.danger .info-box-icon {
+  color: var(--error);
+}
+
+.info-box.note {
+  background-color: rgba(33, 150, 243, 0.1);
+  border-color: var(--info);
+}
+
+.info-box.note .info-box-icon {
+  color: var(--info);
+}
+
+/* ====== ÉTAPES (Step-by-step) ====== */
+.steps-container {
+  counter-reset: step-counter;
+  margin: 30px 0;
+}
+
+.step {
+  counter-increment: step-counter;
+  position: relative;
+  padding: 20px 20px 20px 60px;
+  margin-bottom: 20px;
+  background-color: var(--bg-secondary);
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+}
+
+.step::before {
+  content: counter(step-counter);
+  position: absolute;
+  left: 20px;
+  top: 20px;
+  width: 32px;
+  height: 32px;
+  background-color: var(--primary-color);
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 16px;
+}
+
+.step h4 {
+  margin: 0 0 12px 0;
+}
+
+/* ====== TABLEAUX ====== */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 20px 0;
+  background-color: var(--bg-secondary);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+thead {
+  background-color: var(--bg-tertiary);
+}
+
+th {
+  padding: 12px 16px;
+  text-align: left;
+  font-weight: 600;
+  color: var(--text-primary);
+  border-bottom: 2px solid var(--border-color);
+}
+
+td {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border-color);
+  color: var(--text-secondary);
+}
+
+tr:last-child td {
+  border-bottom: none;
+}
+
+tr:hover {
+  background-color: var(--bg-tertiary);
+}
+
+/* ====== SYSTÈME DE POST-ITS ====== */
+.postit {
+  position: absolute;
+  width: 200px;
+  min-height: 150px;
+  padding: 20px 16px 16px 16px;
+  background-color: var(--postit-yellow);
+  border-radius: 0 0 8px 8px;
+  box-shadow: 2px 2px 8px rgba(0, 0, 0, 0.2);
+  cursor: move;
+  z-index: 1000;
+  font-family: 'Indie Flower', cursive, sans-serif;
+  transition: box-shadow 0.2s ease;
+}
+
+.postit:hover {
+  box-shadow: 4px 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.postit.dragging {
+  opacity: 0.8;
+  cursor: grabbing;
+}
+
+/* Barre du haut du post-it */
+.postit-header {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 24px;
+  background-color: rgba(0, 0, 0, 0.1);
+  border-radius: 0;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding: 0 8px;
+  gap: 4px;
+}
+
+.postit-btn {
+  width: 16px;
+  height: 16px;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  background-color: rgba(255, 255, 255, 0.5);
+}
+
+.postit-btn:hover {
+  transform: scale(1.2);
+}
+
+.postit-btn.delete {
+  color: #f44336;
+}
+
+.postit-btn.delete:hover {
+  background-color: #f44336;
+  color: white;
+}
+
+/* Contenu du post-it */
+.postit-content {
+  width: 100%;
+  min-height: 100px;
+  background: transparent;
+  border: none;
+  outline: none;
+  resize: none;
+  font-size: 14px;
+  line-height: 1.6;
+  color: #333;
+  font-family: inherit;
+}
+
+/* Couleurs de post-its */
+.postit.yellow { background-color: var(--postit-yellow); }
+.postit.green { background-color: var(--postit-green); }
+.postit.pink { background-color: var(--postit-pink); }
+.postit.blue { background-color: var(--postit-blue); }
+.postit.orange { background-color: var(--postit-orange); }
+
+/* Bouton flottant pour créer un post-it */
+.fab-postit {
+  position: fixed;
+  bottom: 30px;
+  right: 30px;
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background-color: var(--primary-color);
+  color: white;
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  transition: all 0.3s ease;
+  z-index: 900;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.fab-postit:hover {
+  transform: scale(1.1) rotate(90deg);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
+}
+
+/* ====== MODAL (Paramètres) ====== */
+.modal {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.6);
+  z-index: 2000;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal.active {
+  display: flex;
+}
+
+.modal-content {
+  background-color: var(--bg-secondary);
+  border-radius: 12px;
+  padding: 30px;
+  max-width: 500px;
+  width: 90%;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.modal-title {
+  font-size: 24px;
+  font-weight: 600;
+}
+
+.modal-close {
+  background: none;
+  border: none;
+  font-size: 24px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+
+.modal-close:hover {
+  color: var(--primary-color);
+}
+
+.modal-body {
+  margin-bottom: 24px;
+}
+
+.setting-group {
+  margin-bottom: 24px;
+}
+
+.setting-label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.toggle-buttons {
+  display: flex;
+  gap: 8px;
+}
+
+.toggle-btn {
+  flex: 1;
+  padding: 10px;
+  border: 1px solid var(--border-color);
+  background-color: var(--bg-tertiary);
+  color: var(--text-primary);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.toggle-btn:hover {
+  border-color: var(--primary-color);
+}
+
+.toggle-btn.active {
+  background-color: var(--primary-color);
+  color: white;
+  border-color: var(--primary-color);
+}
+
+/* Sélecteur de couleur */
+.color-picker-container {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.color-presets {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 8px;
+}
+
+.color-preset {
+  width: 100%;
+  height: 40px;
+  border: 2px solid var(--border-color);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.color-preset:hover {
+  transform: scale(1.1);
+  border-color: var(--primary-color);
+}
+
+.color-preset.active {
+  border: 3px solid var(--text-primary);
+  box-shadow: 0 0 0 2px var(--primary-color);
+}
+
+.custom-color-input {
+  width: 100%;
+  height: 50px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+/* ====== RESPONSIVE ====== */
+@media (max-width: 768px) {
+  .sidebar {
+    width: 100%;
+    height: auto;
+    position: static;
+  }
+  
+  .main-content {
+    margin-left: 0;
+  }
+  
+  .content-body {
+    padding: 20px;
+  }
+  
+  .search-container {
+    max-width: 100%;
+  }
+}
+
+/* ====== SCROLLBAR CUSTOM ====== */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg-secondary);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--primary-color);
+}
+
+/* ====== ANIMATIONS ====== */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.fade-in {
+  animation: fadeIn 0.3s ease;
+}
+
+/* ====== UTILITIES ====== */
+.text-center { text-align: center; }
+.text-right { text-align: right; }
+.mt-1 { margin-top: 8px; }
+.mt-2 { margin-top: 16px; }
+.mt-3 { margin-top: 24px; }
+.mb-1 { margin-bottom: 8px; }
+.mb-2 { margin-bottom: 16px; }
+.mb-3 { margin-bottom: 24px; }
+
+/* ====== PRINT STYLES (pour plus tard) ====== */
+@media print {
+  .sidebar,
+  .content-header,
+  .fab-postit,
+  .postit {
+    display: none !important;
+  }
+  
+  .main-content {
+    margin-left: 0;
+  }
+}

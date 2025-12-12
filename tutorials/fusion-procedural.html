@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Fusion d'objets - Procedural Mesh | NIZOZ Studio</title>
+  <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+  
+  <div class="app-container">
+    
+    <!-- ====== SIDEBAR ====== -->
+    <aside class="sidebar">
+      <!-- Header -->
+      <div class="sidebar-header">
+        <a href="../index.html" class="logo">
+          <span class="logo-icon">🎮</span>
+          <span>NIZOZ Studio</span>
+        </a>
+      </div>
+      
+      <!-- Navigation (identique à index.html) -->
+      <nav>
+        <div class="nav-section">
+          <ul class="nav-list">
+            <li class="nav-item">
+              <a href="../index.html" class="nav-link">
+                <span class="nav-icon">🏠</span>
+                <span>Accueil</span>
+              </a>
+            </li>
+          </ul>
+        </div>
+        
+        <div class="nav-section">
+          <div class="nav-title">📚 Tutoriels</div>
+          <ul class="nav-list">
+            <li class="nav-item">
+              <a href="fusion-procedural.html" class="nav-link active">
+                <span class="nav-icon">🔧</span>
+                <span>Fusion d'objets</span>
+              </a>
+            </li>
+          </ul>
+        </div>
+      </nav>
+    </aside>
+    
+    <!-- ====== CONTENU PRINCIPAL ====== -->
+    <main class="main-content">
+      
+      <!-- Header -->
+      <header class="content-header">
+        <div class="header-controls">
+          <div class="search-container">
+            <input type="text" class="search-input" placeholder="Rechercher dans la documentation...">
+            <span class="search-icon">🔍</span>
+          </div>
+          <button class="btn-icon" data-action="toggle-theme" title="Changer le thème">🌙</button>
+          <button class="btn-icon" data-action="settings" title="Paramètres">⚙️</button>
+        </div>
+      </header>
+      
+      <!-- Corps -->
+      <div class="content-body">
+        
+        <!-- Breadcrumb -->
+        <div style="color: var(--text-secondary); margin-bottom: 24px; font-size: 14px;">
+          <a href="../index.html" style="color: var(--text-secondary);">Accueil</a>
+          <span style="margin: 0 8px;">›</span>
+          <a href="../index.html#tutoriels" style="color: var(--text-secondary);">Tutoriels</a>
+          <span style="margin: 0 8px;">›</span>
+          <span style="color: var(--primary-color);">Fusion d'objets</span>
+        </div>
+        
+        <!-- Titre -->
+        <h1 id="titre">🔧 Fusion d'objets avec Procedural Mesh</h1>
+        
+        <!-- Meta info -->
+        <div style="display: flex; gap: 12px; margin-bottom: 32px; flex-wrap: wrap;">
+          <span style="background: var(--bg-secondary); padding: 8px 16px; border-radius: 8px; font-size: 14px;">
+            🎯 Niveau : Intermédiaire
+          </span>
+          <span style="background: var(--bg-secondary); padding: 8px 16px; border-radius: 8px; font-size: 14px;">
+            ⏱️ Durée : ~30 minutes
+          </span>
+          <span style="background: var(--bg-secondary); padding: 8px 16px; border-radius: 8px; font-size: 14px;">
+            📦 Unreal Engine 5.7
+          </span>
+          <span style="background: var(--bg-secondary); padding: 8px 16px; border-radius: 8px; font-size: 14px;">
+            🔤 Langage : Blueprint
+          </span>
+        </div>
+        
+        <!-- Introduction -->
+        <div class="info-box note">
+          <div class="info-box-icon">ℹ️</div>
+          <div class="info-box-content">
+            <h4>Ce que tu vas apprendre</h4>
+            <p>
+              Dans ce tutoriel, tu vas créer un système de fusion d'objets physiques qui combine plusieurs meshes en un seul mesh procedural. Le système supportera la fusion récursive (fusionner des objets déjà fusionnés) et permettra de "défaire" une fusion en respawnant les objets originaux.
+            </p>
+          </div>
+        </div>
+        
+        <!-- Table des matières -->
+        <div style="background: var(--bg-secondary); padding: 24px; border-radius: 12px; margin: 32px 0; border: 1px solid var(--border-color);">
+          <h3 style="margin-top: 0;">📋 Table des matières</h3>
+          <ul style="list-style: none; margin-left: 0;">
+            <li style="margin-bottom: 8px;"><a href="#probleme">1. Le problème avec la méthode par attachement</a></li>
+            <li style="margin-bottom: 8px;"><a href="#solution">2. La solution : Procedural Mesh</a></li>
+            <li style="margin-bottom: 8px;"><a href="#architecture">3. Architecture du système</a></li>
+            <li style="margin-bottom: 8px;"><a href="#struct">4. Créer le struct de données</a></li>
+            <li style="margin-bottom: 8px;"><a href="#implementation">5. Implémentation Blueprint</a></li>
+            <li style="margin-bottom: 8px;"><a href="#fusion">6. La fonction de fusion</a></li>
+            <li style="margin-bottom: 8px;"><a href="#defusion">7. Défaire une fusion</a></li>
+            <li style="margin-bottom: 8px;"><a href="#optimisation">8. Optimisations</a></li>
+            <li style="margin-bottom: 8px;"><a href="#troubleshooting">9. Problèmes courants</a></li>
+          </ul>
+        </div>
+        
+        <!-- Section 1 -->
+        <h2 id="probleme"><a href="#probleme" class="anchor">#</a>1. Le problème avec la méthode par attachement</h2>
+        
+        <p>
+          Quand on fusionne des objets en les attachant simplement comme composants, plusieurs problèmes apparaissent :
+        </p>
+        
+        <ul>
+          <li><strong>Performances</strong> : Chaque composant = un calcul de physique séparé</li>
+          <li><strong>Collisions</strong> : Les parties peuvent entrer en collision entre elles</li>
+          <li><strong>Complexité</strong> : La fusion récursive devient un cauchemar de hiérarchie</li>
+          <li><strong>Maintenance</strong> : Difficile de débugger avec des dizaines de composants</li>
+        </ul>
+        
+        <div class="info-box warning">
+          <div class="info-box-icon">⚠️</div>
+          <div class="info-box-content">
+            <h4>Expérience vécue</h4>
+            <p>
+              J'ai essayé cette méthode au début et j'ai eu des problèmes avec les objets qui disparaissaient lors de fusions multiples. Le système devient rapidement ingérable !
+            </p>
+          </div>
+        </div>
+        
+        <!-- Section 2 -->
+        <h2 id="solution"><a href="#solution" class="anchor">#</a>2. La solution : Procedural Mesh</h2>
+        
+        <p>
+          La <strong>Procedural Mesh Component</strong> permet de créer un mesh dynamiquement en combinant les vertices de plusieurs meshes. Résultat : UN SEUL mesh, une seule collision, une seule physique.
+        </p>
+        
+        <h3>Avantages</h3>
+        
+        <table>
+          <thead>
+            <tr>
+              <th>Critère</th>
+              <th>Méthode Attach</th>
+              <th>Procedural Mesh</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Nombre de composants</td>
+              <td>N composants</td>
+              <td><strong>1 composant</strong></td>
+            </tr>
+            <tr>
+              <td>Calculs physiques</td>
+              <td>N calculs</td>
+              <td><strong>1 calcul</strong></td>
+            </tr>
+            <tr>
+              <td>Fusion récursive</td>
+              <td>Compliqué 😰</td>
+              <td><strong>Trivial 😊</strong></td>
+            </tr>
+            <tr>
+              <td>Performances</td>
+              <td>Moyennes</td>
+              <td><strong>Excellentes</strong></td>
+            </tr>
+            <tr>
+              <td>Défaire fusion</td>
+              <td>Difficile</td>
+              <td><strong>Facile (respawn)</strong></td>
+            </tr>
+          </tbody>
+        </table>
+        
+        <!-- Section 3 -->
+        <h2 id="architecture"><a href="#architecture" class="anchor">#</a>3. Architecture du système</h2>
+        
+        <p>Le système se compose de trois éléments principaux :</p>
+        
+        <div class="steps-container">
+          
+          <div class="step">
+            <h4>BP_MasterObjet</h4>
+            <p>
+              Ton Blueprint de base pour tous les objets "simples" (bâton, caillou, etc.). Il contient le mesh et les propriétés de l'objet.
+            </p>
+          </div>
+          
+          <div class="step">
+            <h4>BP_MasterObjetFusion</h4>
+            <p>
+              Blueprint pour les objets fusionnés. Il hérite de BP_MasterObjet et ajoute le Procedural Mesh Component + l'array de données des parties.
+            </p>
+          </div>
+          
+          <div class="step">
+            <h4>Struct FusionPartData</h4>
+            <p>
+              Structure de données qui sauvegarde toutes les infos d'un objet avant fusion (mesh, transform, variables).
+            </p>
+          </div>
+          
+        </div>
+        
+        <!-- Section 4 -->
+        <h2 id="struct"><a href="#struct" class="anchor">#</a>4. Créer le struct de données</h2>
+        
+        <p>
+          D'abord, crée un Blueprint Structure pour sauvegarder les données de chaque partie fusionnée.
+        </p>
+        
+        <div class="code-block">
+          <div class="code-header">
+            <span class="code-title">📝 Blueprint Structure : FusionPartData</span>
+          </div>
+          <pre><code>Struct FusionPartData:
+├─ StaticMesh (Static Mesh Object Reference)
+├─ RelativeTransform (Transform)
+├─ Material (Material Interface Object Reference)
+├─ Durability (Float)
+├─ ObjectType (String)
+└─ CustomData (Map of String to String) // Optionnel</code></pre>
+        </div>
+        
+        <div class="info-box tip">
+          <div class="info-box-icon">💡</div>
+          <div class="info-box-content">
+            <h4>Astuce</h4>
+            <p>
+              Tu peux ajouter autant de variables que nécessaire dans ce struct. Pense à toutes les propriétés que tu veux conserver quand tu défais la fusion !
+            </p>
+          </div>
+        </div>
+        
+        <!-- Section 5 -->
+        <h2 id="implementation"><a href="#implementation" class="anchor">#</a>5. Implémentation Blueprint</h2>
+        
+        <h3>Prérequis : Activer le plugin</h3>
+        
+        <div class="info-box note">
+          <div class="info-box-icon">📦</div>
+          <div class="info-box-content">
+            <h4>Plugin requis</h4>
+            <p>
+              Avant de commencer, assure-toi d'activer le plugin <strong>"Procedural Mesh Component"</strong> dans :
+              <br><br>
+              <code>Edit → Plugins → Rechercher "Procedural Mesh" → Cocher "Enabled"</code>
+              <br><br>
+              Redémarre Unreal Engine après l'activation.
+            </p>
+          </div>
+        </div>
+        
+        <h3>Créer BP_MasterObjetFusion</h3>
+        
+        <div class="steps-container">
+          
+          <div class="step">
+            <h4>Créer le Blueprint</h4>
+            <p>
+              Crée un nouveau Blueprint Class qui hérite de <strong>BP_MasterObjet</strong>.<br>
+              Nomme-le <code>BP_MasterObjetFusion</code>.
+            </p>
+          </div>
+          
+          <div class="step">
+            <h4>Ajouter le Procedural Mesh Component</h4>
+            <p>
+              Dans le Components panel, ajoute un <strong>Procedural Mesh Component</strong>.<br>
+              Nomme-le <code>ProceduralMesh</code>.
+            </p>
+          </div>
+          
+          <div class="step">
+            <h4>Créer les variables</h4>
+            <p>
+              Dans le panneau Variables, crée :<br>
+              • <code>PartsData</code> (Array of FusionPartData)<br>
+              • <code>IsFused</code> (Boolean) - pour savoir si l'objet est fusionné
+            </p>
+          </div>
+          
+        </div>
+        
+        <!-- Section 6 -->
+        <h2 id="fusion"><a href="#fusion" class="anchor">#</a>6. La fonction de fusion</h2>
+        
+        <p>
+          Maintenant, créons la fonction qui combine plusieurs objets en un seul mesh procedural.
+        </p>
+        
+        <h3>Function : FuseObjects</h3>
+        
+        <div class="code-block">
+          <div class="code-header">
+            <span class="code-title">⚙️ Blueprint Function : FuseObjects</span>
+          </div>
+          <pre><code>Input:
+├─ ObjectsToFuse (Array of BP_MasterObjet)
+
+Logic:
+1. Pour chaque objet dans ObjectsToFuse:
+   ├─ Créer un FusionPartData
+   ├─ Sauvegarder: Mesh, World Transform, Material, Variables
+   └─ Ajouter à PartsData array
+
+2. Pour chaque FusionPartData dans PartsData:
+   ├─ Récupérer les vertices du mesh
+   ├─ Transformer selon RelativeTransform
+   └─ Ajouter au Procedural Mesh Component
+
+3. Créer la collision du mesh combiné
+
+4. Activer la physique sur ProceduralMesh
+
+5. Détruire tous les objets originaux
+
+6. Set IsFused = true</code></pre>
+        </div>
+        
+        <h3>Détails d'implémentation</h3>
+        
+        <div class="info-box warning">
+          <div class="info-box-icon">⚠️</div>
+          <div class="info-box-content">
+            <h4>Point important</h4>
+            <p>
+              Quand tu récupères les vertices d'un Static Mesh, tu dois les transformer dans l'espace monde (World Space) AVANT de les combiner, sinon les positions seront incorrectes.
+            </p>
+          </div>
+        </div>
+        
+        <div class="code-block">
+          <div class="code-header">
+            <span class="code-title">🔧 Pseudo-code pour combiner les meshes</span>
+          </div>
+          <pre><code>// Arrays finaux pour le mesh combiné
+FinalVertices = []
+FinalTriangles = []
+FinalNormals = []
+FinalUVs = []
+
+VertexOffset = 0
+
+Pour chaque PartData dans PartsData:
+  // 1. Récupérer les données du mesh source
+  SourceMesh = PartData.StaticMesh
+  SourceVertices = GetVertices(SourceMesh)
+  SourceTriangles = GetTriangles(SourceMesh)
+  SourceNormals = GetNormals(SourceMesh)
+  SourceUVs = GetUVs(SourceMesh)
+  
+  // 2. Transformer chaque vertex
+  Pour chaque Vertex dans SourceVertices:
+    TransformedVertex = TransformPosition(Vertex, PartData.RelativeTransform)
+    FinalVertices.Add(TransformedVertex)
+  
+  // 3. Ajuster les indices des triangles
+  Pour chaque Triangle dans SourceTriangles:
+    AdjustedTriangle = Triangle + VertexOffset
+    FinalTriangles.Add(AdjustedTriangle)
+  
+  // 4. Copier les normales et UVs
+  FinalNormals.Append(SourceNormals)
+  FinalUVs.Append(SourceUVs)
+  
+  // 5. Mettre à jour l'offset
+  VertexOffset += SourceVertices.Length
+
+// 6. Créer le mesh procedural
+ProceduralMesh.CreateMeshSection(
+  SectionIndex = 0,
+  Vertices = FinalVertices,
+  Triangles = FinalTriangles,
+  Normals = FinalNormals,
+  UV0 = FinalUVs,
+  VertexColors = [],
+  Tangents = [],
+  bCreateCollision = true
+)</code></pre>
+        </div>
+        
+        <div class="info-box danger">
+          <div class="info-box-icon">🔥</div>
+          <div class="info-box-content">
+            <h4>Attention : Limitations Blueprint</h4>
+            <p>
+              En Blueprint pur, il est <strong>difficile</strong> d'accéder directement aux vertices d'un Static Mesh. Tu as deux options :
+            </p>
+            <ol>
+              <li><strong>Utiliser du C++</strong> pour créer une fonction Blueprint-callable qui récupère les vertices</li>
+              <li><strong>Utiliser Geometry Script</strong> (plugin UE5) qui permet de manipuler les meshes en Blueprint</li>
+            </ol>
+          </div>
+        </div>
+        
+        <!-- Section 7 -->
+        <h2 id="defusion"><a href="#defusion" class="anchor">#</a>7. Défaire une fusion</h2>
+        
+        <p>
+          La beauté de ce système : défaire une fusion est trivial ! Tu respawnes simplement les objets originaux à partir des données sauvegardées.
+        </p>
+        
+        <h3>Function : UnfuseObjects</h3>
+        
+        <div class="code-block">
+          <div class="code-header">
+            <span class="code-title">⚙️ Blueprint Function : UnfuseObjects</span>
+          </div>
+          <pre><code>Logic:
+
+1. Si IsFused == false:
+   └─ Return (rien à défaire)
+
+2. Pour chaque PartData dans PartsData:
+   ├─ Spawn Actor (BP_MasterObjet)
+   ├─ Set Static Mesh = PartData.StaticMesh
+   ├─ Set World Transform = PartData.RelativeTransform
+   ├─ Set Material = PartData.Material
+   ├─ Set Durability = PartData.Durability
+   └─ Set ObjectType = PartData.ObjectType
+
+3. Destroy Self (l'objet fusionné)</code></pre>
+        </div>
+        
+        <div class="info-box tip">
+          <div class="info-box-icon">💡</div>
+          <div class="info-box-content">
+            <h4>Variante : Explosions</h4>
+            <p>
+              Tu peux rendre la défusion plus cool en ajoutant une force physique quand tu respawnes les objets ! Ça crée un effet d'explosion sympathique.
+            </p>
+          </div>
+        </div>
+        
+        <!-- Section 8 -->
+        <h2 id="optimisation"><a href="#optimisation" class="anchor">#</a>8. Optimisations</h2>
+        
+        <h3>Performances</h3>
+        
+        <ul>
+          <li><strong>LODs</strong> : Si tes meshes originaux ont des LODs, conserve-les dans le mesh procedural</li>
+          <li><strong>Collision simplifiée</strong> : Utilise une collision box/sphere pour le mesh combiné au lieu d'une collision complexe</li>
+          <li><strong>Limite le nombre de parties</strong> : Au-delà de 10-15 objets fusionnés, les performances peuvent chuter</li>
+          <li><strong>Materials</strong> : Si possible, utilise le même material pour tous les objets fusionnés (évite les draw calls multiples)</li>
+        </ul>
+        
+        <h3>Mémoire</h3>
+        
+        <div class="code-block">
+          <div class="code-header">
+            <span class="code-title">🧹 Nettoyage mémoire</span>
+          </div>
+          <pre><code>// Après avoir créé le Procedural Mesh, pense à clear les arrays
+FinalVertices.Clear()
+FinalTriangles.Clear()
+FinalNormals.Clear()
+FinalUVs.Clear()
+
+// Garbage collector fera le reste</code></pre>
+        </div>
+        
+        <!-- Section 9 -->
+        <h2 id="troubleshooting"><a href="#troubleshooting" class="anchor">#</a>9. Problèmes courants</h2>
+        
+        <h3>❌ Le mesh combiné n'apparaît pas</h3>
+        <ul>
+          <li>Vérifie que le plugin Procedural Mesh est activé</li>
+          <li>Assure-toi que les vertices sont bien transformés en World Space</li>
+          <li>Check que les triangles sont dans le bon ordre (winding)</li>
+        </ul>
+        
+        <h3>❌ Les collisions ne marchent pas</h3>
+        <ul>
+          <li>Vérifie que <code>bCreateCollision = true</code> dans CreateMeshSection</li>
+          <li>Essaye d'utiliser <code>SetCollisionEnabled(Enabled)</code> après création</li>
+          <li>Active <code>Simulate Physics</code> sur le ProceduralMesh component</li>
+        </ul>
+        
+        <h3>❌ Les textures sont bizarres</h3>
+        <ul>
+          <li>Vérifie que tu copies bien les UVs de chaque mesh</li>
+          <li>Les UVs doivent être normalisés (entre 0 et 1)</li>
+        </ul>
+        
+        <h3>❌ Crash lors de la fusion</h3>
+        <ul>
+          <li>Vérifie que les arrays Vertices/Triangles/Normals/UVs ont la bonne taille</li>
+          <li>Les indices de triangles doivent être < nombre de vertices</li>
+          <li>Ne pas avoir de vertices ou triangles vides</li>
+        </ul>
+        
+        <!-- Conclusion -->
+        <div style="margin-top: 60px; padding: 40px; background: linear-gradient(135deg, var(--bg-secondary) 0%, var(--bg-tertiary) 100%); border-radius: 12px; border: 1px solid var(--border-color);">
+          <h2 style="margin-top: 0;">🎉 Félicitations !</h2>
+          <p>
+            Tu as maintenant un système de fusion d'objets performant et flexible ! Ce système est la base pour plein de mécaniques de gameplay cool : crafting, construction, assemblage d'armes, etc.
+          </p>
+          
+          <h3>🚀 Prochaines étapes</h3>
+          <ul>
+            <li>Ajouter des effets visuels lors de la fusion (particules, son)</li>
+            <li>Créer des "recettes" de fusion (bâton + caillou = lance)</li>
+            <li>Implémenter un système de durabilité pour les objets fusionnés</li>
+            <li>Ajouter des animations de fusion</li>
+          </ul>
+          
+          <div class="info-box tip" style="margin-top: 24px;">
+            <div class="info-box-icon">💬</div>
+            <div class="info-box-content">
+              <h4>Besoin d'aide ?</h4>
+              <p>
+                N'hésite pas à utiliser les post-its pour annoter cette page avec tes notes personnelles et tes découvertes !
+              </p>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Navigation -->
+        <div style="margin-top: 40px; padding-top: 40px; border-top: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center;">
+          <a href="../index.html" style="color: var(--text-secondary);">← Retour à l'accueil</a>
+          <span style="color: var(--text-secondary); font-size: 14px;">Plus de tutoriels bientôt...</span>
+        </div>
+        
+      </div>
+      
+    </main>
+    
+  </div>
+  
+  <!-- Scripts Firebase (pour post-its collaboratifs) -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+  <script src="../firebase-config.js"></script>
+  
+  <!-- Scripts -->
+  <script src="../settings.js"></script>
+  <script src="../search.js"></script>
+  <script src="../postit-system.js"></script>
+  
+</body>
+</html>
