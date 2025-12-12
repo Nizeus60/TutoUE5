@@ -1,6 +1,6 @@
 // ============================================
 // NIZOZ STUDIO - SYSTÈME DE POST-ITS
-// Gestion des notes adhésives collaboratives avec Firebase
+// Version GitHub API (sans Firebase)
 // ============================================
 
 class PostItSystem {
@@ -9,42 +9,31 @@ class PostItSystem {
     this.currentPage = this.normalizePagePath(window.location.pathname);
     this.draggedPostit = null;
     this.offset = { x: 0, y: 0 };
-    this.database = null;
-    this.firebaseReady = false;
     this.username = null;
-    this.isEditing = false; // Flag pour savoir si on édite un post-it
-    this.updateTimers = {}; // Timers pour debounce
+    this.isEditing = false;
+    this.updateTimers = {};
+    this.githubReady = false;
+    this.fileSha = null;
+    this.refreshTimer = null;
     
     this.init();
   }
   
-  // Normaliser le chemin de la page (pour éviter les problèmes)
   normalizePagePath(path) {
-    // Enlever le slash initial et remplacer les / par _
     return path.replace(/^\//, '').replace(/\//g, '_').replace(/\.html$/, '') || 'index';
   }
   
   init() {
-    // Demander le pseudo de l'utilisateur
     this.askUsername();
-    
-    // Initialiser Firebase
-    this.initFirebase();
-    
-    // Créer le bouton FAB
+    this.initGitHub();
     this.createFAB();
-    
-    // Event listeners
     this.setupEventListeners();
   }
   
-  // Demander le pseudo
   askUsername() {
-    // Essayer de récupérer depuis localStorage
     this.username = localStorage.getItem('nizoz_username');
-    
     if (!this.username) {
-      this.username = prompt('👋 Entre ton pseudo pour les post-its collaboratifs:', 'Anonyme');
+      this.username = prompt('👋 Entre ton pseudo:', 'Anonyme');
       if (!this.username || this.username.trim() === '') {
         this.username = 'Anonyme';
       }
@@ -52,71 +41,150 @@ class PostItSystem {
     }
   }
   
-  // Initialiser Firebase
-  initFirebase() {
-    if (typeof firebase === 'undefined') {
-      console.warn('⚠️ Firebase non chargé, utilisation du mode local uniquement');
-      this.firebaseReady = false;
+  initGitHub() {
+    if (typeof githubConfig === 'undefined') {
+      console.warn('⚠️ GitHub config non trouvée, mode local');
+      this.githubReady = false;
       this.loadPostitsLocal();
-      this.renderPostits();
       return;
     }
     
-    try {
-      if (typeof initFirebase === 'function') {
-        const success = initFirebase();
-        if (success) {
-          this.database = getDatabase();
-          this.firebaseReady = true;
-          console.log('✅ Post-its collaboratifs activés');
-          this.loadPostitsFirebase();
-          this.listenToChanges();
-        } else {
-          throw new Error('Initialisation Firebase échouée');
-        }
-      } else {
-        throw new Error('initFirebase non disponible');
+    this.config = githubConfig;
+    this.githubReady = true;
+    console.log('✅ Mode GitHub API');
+    this.loadPostitsGitHub();
+    this.startAutoRefresh();
+  }
+  
+  startAutoRefresh() {
+    if (!this.githubReady) return;
+    this.refreshTimer = setInterval(() => {
+      if (!this.isEditing) {
+        this.loadPostitsGitHub(true);
       }
-    } catch (error) {
-      console.warn('⚠️ Erreur Firebase, utilisation du mode local:', error);
-      this.firebaseReady = false;
-      this.loadPostitsLocal();
-      this.renderPostits();
+    }, this.config.refreshInterval * 1000);
+  }
+  
+  stopAutoRefresh() {
+    if (this.refreshTimer) {
+      clearInterval(this.refreshTimer);
+      this.refreshTimer = null;
     }
   }
   
-  // Écouter les changements Firebase en temps réel
-  listenToChanges() {
-    const ref = this.database.ref(`postits/${this.currentPage}`);
+  async loadPostitsGitHub(silent = false) {
+    if (!this.githubReady) return;
     
-    ref.on('value', (snapshot) => {
-      const data = snapshot.val();
-      if (data) {
-        this.postits = Object.values(data);
+    try {
+      const url = `https://api.github.com/repos/${this.config.owner}/${this.config.repo}/contents/${this.config.postitFile}?ref=${this.config.branch}`;
+      const headers = {'Accept': 'application/vnd.github.v3+json'};
+      if (this.config.token) headers['Authorization'] = `token ${this.config.token}`;
+      
+      const response = await fetch(url, { headers });
+      if (!response.ok) throw new Error(`GitHub API error: ${response.status}`);
+      
+      const data = await response.json();
+      this.fileSha = data.sha;
+      const content = JSON.parse(atob(data.content));
+      
+      if (content.postits && content.postits[this.currentPage]) {
+        this.postits = Object.values(content.postits[this.currentPage]);
       } else {
         this.postits = [];
       }
       
-      // Ne pas re-render si on est en train d'éditer un post-it
-      if (!this.isEditing) {
+      if (!silent) {
         this.renderPostits();
+      } else {
+        this.updateExistingPostits();
       }
+    } catch (error) {
+      console.error('❌ Erreur GitHub API:', error);
+      if (!silent) {
+        this.githubReady = false;
+        this.loadPostitsLocal();
+      }
+    }
+  }
+  
+  updateExistingPostits() {
+    this.postits.forEach(postit => {
+      const element = document.querySelector(`[data-postit-id="${postit.id}"]`);
+      if (element) {
+        const colors = ['yellow', 'green', 'pink', 'blue', 'orange'];
+        colors.forEach(color => element.classList.remove(color));
+        element.classList.add(postit.color);
+        
+        const textarea = element.querySelector('.postit-content');
+        if (textarea && document.activeElement !== textarea && textarea.value !== postit.content) {
+          textarea.value = postit.content;
+        }
+        
+        element.style.left = postit.x + 'px';
+        element.style.top = postit.y + 'px';
+      } else {
+        document.body.appendChild(this.createPostitElement(postit));
+      }
+    });
+    
+    document.querySelectorAll('.postit').forEach(el => {
+      const id = parseInt(el.getAttribute('data-postit-id'));
+      if (!this.postits.find(p => p.id === id)) el.remove();
     });
   }
   
-  // Charger depuis Firebase
-  loadPostitsFirebase() {
-    const ref = this.database.ref(`postits/${this.currentPage}`);
-    ref.once('value', (snapshot) => {
-      const data = snapshot.val();
-      if (data) {
-        this.postits = Object.values(data);
+  async savePostitsGitHub() {
+    if (!this.githubReady) {
+      this.savePostitsLocal();
+      return;
+    }
+    
+    try {
+      const getUrl = `https://api.github.com/repos/${this.config.owner}/${this.config.repo}/contents/${this.config.postitFile}?ref=${this.config.branch}`;
+      const headers = {'Accept': 'application/vnd.github.v3+json', 'Content-Type': 'application/json'};
+      if (this.config.token) headers['Authorization'] = `token ${this.config.token}`;
+      
+      const getResponse = await fetch(getUrl, { headers });
+      let currentContent = { postits: {} };
+      let currentSha = this.fileSha;
+      
+      if (getResponse.ok) {
+        const getData = await getResponse.json();
+        currentSha = getData.sha;
+        currentContent = JSON.parse(atob(getData.content));
       }
-      this.renderPostits();
-    });
+      
+      if (!currentContent.postits) currentContent.postits = {};
+      currentContent.postits[this.currentPage] = {};
+      this.postits.forEach(postit => {
+        currentContent.postits[this.currentPage][postit.id] = postit;
+      });
+      
+      const newContent = btoa(unescape(encodeURIComponent(JSON.stringify(currentContent, null, 2))));
+      const putUrl = `https://api.github.com/repos/${this.config.owner}/${this.config.repo}/contents/${this.config.postitFile}`;
+      
+      const putResponse = await fetch(putUrl, {
+        method: 'PUT',
+        headers: headers,
+        body: JSON.stringify({
+          message: `Update post-its for ${this.currentPage} by ${this.username}`,
+          content: newContent,
+          sha: currentSha,
+          branch: this.config.branch
+        })
+      });
+      
+      if (!putResponse.ok) throw new Error(`GitHub PUT error: ${putResponse.status}`);
+      
+      const putData = await putResponse.json();
+      this.fileSha = putData.content.sha;
+      console.log('✅ Post-its sauvegardés sur GitHub');
+    } catch (error) {
+      console.error('❌ Erreur sauvegarde GitHub:', error);
+      this.savePostitsLocal();
+    }
   }
   
-  // Charger depuis localStorage (fallback)
   loadPostitsLocal() {
     const saved = localStorage.getItem('nizoz_postits');
     if (saved) {
@@ -124,14 +192,25 @@ class PostItSystem {
         const allPostits = JSON.parse(saved);
         this.postits = allPostits.filter(p => p.page === this.currentPage);
       } catch (e) {
-        console.error('Erreur de chargement des post-its:', e);
         this.postits = [];
       }
     }
     this.renderPostits();
   }
   
-  // Créer le bouton flottant
+  savePostitsLocal() {
+    const saved = localStorage.getItem('nizoz_postits');
+    let allPostits = [];
+    if (saved) {
+      try {
+        allPostits = JSON.parse(saved);
+        allPostits = allPostits.filter(p => p.page !== this.currentPage);
+      } catch (e) {}
+    }
+    allPostits = allPostits.concat(this.postits);
+    localStorage.setItem('nizoz_postits', JSON.stringify(allPostits));
+  }
+  
   createFAB() {
     const fab = document.createElement('button');
     fab.className = 'fab-postit';
@@ -141,13 +220,12 @@ class PostItSystem {
     document.body.appendChild(fab);
   }
   
-  // Event listeners globaux
   setupEventListeners() {
     document.addEventListener('mousemove', (e) => this.onDrag(e));
     document.addEventListener('mouseup', () => this.stopDrag());
+    window.addEventListener('beforeunload', () => this.stopAutoRefresh());
   }
   
-  // Créer un nouveau post-it
   createPostit() {
     const postit = {
       id: Date.now(),
@@ -159,54 +237,28 @@ class PostItSystem {
       author: this.username,
       createdAt: new Date().toISOString()
     };
-    
-    if (this.firebaseReady) {
-      this.savePostitFirebase(postit);
-    } else {
-      this.postits.push(postit);
-      this.savePostitsLocal();
-      this.renderPostits();
-    }
+    this.postits.push(postit);
+    this.renderPostits();
+    this.githubReady ? this.savePostitsGitHub() : this.savePostitsLocal();
   }
   
-  // Sauvegarder un post-it dans Firebase
-  savePostitFirebase(postit) {
-    const ref = this.database.ref(`postits/${this.currentPage}/${postit.id}`);
-    ref.set(postit);
-  }
-  
-  // Supprimer un post-it
   deletePostit(id) {
-    if (this.firebaseReady) {
-      const ref = this.database.ref(`postits/${this.currentPage}/${id}`);
-      ref.remove();
-    } else {
-      this.postits = this.postits.filter(p => p.id !== id);
-      this.savePostitsLocal();
-      this.renderPostits();
-    }
+    this.postits = this.postits.filter(p => p.id !== id);
+    this.renderPostits();
+    this.githubReady ? this.savePostitsGitHub() : this.savePostitsLocal();
   }
   
-  // Changer la couleur d'un post-it
   changeColor(id) {
     const colors = ['yellow', 'green', 'pink', 'blue', 'orange'];
     const postit = this.postits.find(p => p.id === id);
-    
     if (postit) {
       const currentIndex = colors.indexOf(postit.color);
-      const nextIndex = (currentIndex + 1) % colors.length;
-      postit.color = colors[nextIndex];
-      
-      if (this.firebaseReady) {
-        this.savePostitFirebase(postit);
-      } else {
-        this.savePostitsLocal();
-        this.renderPostits();
-      }
+      postit.color = colors[(currentIndex + 1) % colors.length];
+      this.renderPostits();
+      this.githubReady ? this.savePostitsGitHub() : this.savePostitsLocal();
     }
   }
   
-  // Mettre à jour le contenu (avec debounce pour éviter trop d'updates Firebase)
   updateContent(id, content) {
     const postit = this.postits.find(p => p.id === id);
     if (postit) {
@@ -214,49 +266,27 @@ class PostItSystem {
       postit.lastEditedBy = this.username;
       postit.lastEditedAt = new Date().toISOString();
       
-      // Annuler le timer précédent
-      if (this.updateTimers && this.updateTimers[id]) {
-        clearTimeout(this.updateTimers[id]);
-      }
-      
-      // Initialiser updateTimers si nécessaire
-      if (!this.updateTimers) {
-        this.updateTimers = {};
-      }
-      
-      // Attendre 500ms avant de sauvegarder (debounce)
+      if (this.updateTimers[id]) clearTimeout(this.updateTimers[id]);
       this.updateTimers[id] = setTimeout(() => {
-        if (this.firebaseReady) {
-          this.savePostitFirebase(postit);
-        } else {
-          this.savePostitsLocal();
-        }
+        this.githubReady ? this.savePostitsGitHub() : this.savePostitsLocal();
         delete this.updateTimers[id];
-      }, 500);
+      }, 1000);
     }
   }
   
-  // Mettre à jour la position
   updatePosition(id, x, y) {
     const postit = this.postits.find(p => p.id === id);
     if (postit) {
       postit.x = x;
       postit.y = y;
-      
-      if (this.firebaseReady) {
-        this.savePostitFirebase(postit);
-      } else {
-        this.savePostitsLocal();
-      }
+      this.githubReady ? this.savePostitsGitHub() : this.savePostitsLocal();
     }
   }
   
-  // Commencer le drag
   startDrag(e, id) {
     e.preventDefault();
     const postit = this.postits.find(p => p.id === id);
-    const element = e.currentTarget;
-    
+    const element = e.currentTarget.closest('.postit');
     if (postit && element) {
       this.draggedPostit = postit;
       const rect = element.getBoundingClientRect();
@@ -266,90 +296,32 @@ class PostItSystem {
     }
   }
   
-  // Pendant le drag
   onDrag(e) {
     if (this.draggedPostit) {
       const element = document.querySelector(`[data-postit-id="${this.draggedPostit.id}"]`);
       if (element) {
-        const newX = e.clientX - this.offset.x;
-        const newY = e.clientY - this.offset.y;
-        
-        element.style.left = newX + 'px';
-        element.style.top = newY + 'px';
+        element.style.left = (e.clientX - this.offset.x) + 'px';
+        element.style.top = (e.clientY - this.offset.y) + 'px';
       }
     }
   }
   
-  // Arrêter le drag
   stopDrag() {
     if (this.draggedPostit) {
       const element = document.querySelector(`[data-postit-id="${this.draggedPostit.id}"]`);
       if (element) {
         element.classList.remove('dragging');
-        
-        // Sauvegarder la nouvelle position
-        const newX = parseInt(element.style.left);
-        const newY = parseInt(element.style.top);
-        this.updatePosition(this.draggedPostit.id, newX, newY);
+        this.updatePosition(this.draggedPostit.id, parseInt(element.style.left), parseInt(element.style.top));
       }
-      
       this.draggedPostit = null;
     }
   }
   
-  // Afficher tous les post-its de la page actuelle (smart render)
   renderPostits() {
-    // Récupérer les IDs des post-its actuellement affichés
-    const existingIds = new Set();
-    document.querySelectorAll('.postit').forEach(el => {
-      existingIds.add(parseInt(el.getAttribute('data-postit-id')));
-    });
-    
-    // Récupérer les IDs des post-its qui devraient être affichés
-    const currentIds = new Set(this.postits.map(p => p.id));
-    
-    // Supprimer les post-its qui ne sont plus dans la liste
-    document.querySelectorAll('.postit').forEach(el => {
-      const id = parseInt(el.getAttribute('data-postit-id'));
-      if (!currentIds.has(id)) {
-        el.remove();
-      }
-    });
-    
-    // Ajouter les nouveaux post-its
-    this.postits.forEach(postit => {
-      if (!existingIds.has(postit.id)) {
-        const element = this.createPostitElement(postit);
-        document.body.appendChild(element);
-      } else {
-        // Mettre à jour seulement la couleur si elle a changé (pas le contenu pour éviter de perdre le focus)
-        const existingElement = document.querySelector(`[data-postit-id="${postit.id}"]`);
-        if (existingElement) {
-          // Update couleur
-          const colors = ['yellow', 'green', 'pink', 'blue', 'orange'];
-          colors.forEach(color => existingElement.classList.remove(color));
-          existingElement.classList.add(postit.color);
-          
-          // Update auteur si changé
-          const authorSpan = existingElement.querySelector('.postit-author');
-          if (authorSpan && postit.author) {
-            authorSpan.textContent = postit.author;
-            authorSpan.title = `Créé par ${postit.author}${postit.lastEditedBy ? `\nDernier edit: ${postit.lastEditedBy}` : ''}`;
-          }
-          
-          // Update contenu SEULEMENT si le textarea n'a pas le focus
-          const textarea = existingElement.querySelector('.postit-content');
-          if (textarea && document.activeElement !== textarea) {
-            if (textarea.value !== postit.content) {
-              textarea.value = postit.content;
-            }
-          }
-        }
-      }
-    });
+    document.querySelectorAll('.postit').forEach(el => el.remove());
+    this.postits.forEach(postit => document.body.appendChild(this.createPostitElement(postit)));
   }
   
-  // Créer l'élément HTML d'un post-it
   createPostitElement(postit) {
     const div = document.createElement('div');
     div.className = `postit ${postit.color}`;
@@ -357,12 +329,10 @@ class PostItSystem {
     div.style.left = postit.x + 'px';
     div.style.top = postit.y + 'px';
     
-    // Header avec boutons
     const header = document.createElement('div');
     header.className = 'postit-header';
     header.onmousedown = (e) => this.startDrag(e, postit.id);
     
-    // Info auteur (petit texte)
     if (postit.author) {
       const authorInfo = document.createElement('span');
       authorInfo.className = 'postit-author';
@@ -372,88 +342,40 @@ class PostItSystem {
       header.appendChild(authorInfo);
     }
     
-    // Bouton changer couleur
     const colorBtn = document.createElement('button');
     colorBtn.className = 'postit-btn color';
     colorBtn.innerHTML = '🎨';
-    colorBtn.title = 'Changer la couleur';
+    colorBtn.title = 'Changer couleur';
     colorBtn.onclick = (e) => {
       e.stopPropagation();
       this.changeColor(postit.id);
     };
     
-    // Bouton supprimer
     const deleteBtn = document.createElement('button');
     deleteBtn.className = 'postit-btn delete';
     deleteBtn.innerHTML = '✕';
     deleteBtn.title = 'Supprimer';
     deleteBtn.onclick = (e) => {
       e.stopPropagation();
-      if (confirm('Supprimer ce post-it ?')) {
-        this.deletePostit(postit.id);
-      }
+      if (confirm('Supprimer ce post-it ?')) this.deletePostit(postit.id);
     };
     
     header.appendChild(colorBtn);
     header.appendChild(deleteBtn);
     
-    // Contenu
     const textarea = document.createElement('textarea');
     textarea.className = 'postit-content';
     textarea.value = postit.content;
     textarea.placeholder = 'Écrivez votre note...';
-    
-    // Quand on commence à éditer
-    textarea.onfocus = () => {
-      this.isEditing = true;
-    };
-    
-    // Quand on arrête d'éditer
-    textarea.onblur = () => {
-      this.isEditing = false;
-      // Forcer un render pour mettre à jour avec les changements des autres
-      setTimeout(() => this.renderPostits(), 100);
-    };
-    
-    // Mettre à jour le contenu
-    textarea.oninput = (e) => {
-      this.updateContent(postit.id, e.target.value);
-    };
+    textarea.onfocus = () => this.isEditing = true;
+    textarea.onblur = () => this.isEditing = false;
+    textarea.oninput = (e) => this.updateContent(postit.id, e.target.value);
     
     div.appendChild(header);
     div.appendChild(textarea);
-    
     return div;
   }
   
-  // Sauvegarder dans localStorage (fallback)
-  savePostitsLocal() {
-    // Récupérer tous les post-its de toutes les pages
-    const saved = localStorage.getItem('nizoz_postits');
-    let allPostits = [];
-    
-    if (saved) {
-      try {
-        allPostits = JSON.parse(saved);
-        // Enlever les post-its de la page actuelle
-        allPostits = allPostits.filter(p => p.page !== this.currentPage);
-      } catch (e) {
-        console.error('Erreur:', e);
-      }
-    }
-    
-    // Ajouter les post-its actuels
-    allPostits = allPostits.concat(this.postits);
-    
-    localStorage.setItem('nizoz_postits', JSON.stringify(allPostits));
-  }
-  
-  // Obtenir tous les post-its (pour la vue globale)
-  getAllPostits() {
-    return this.postits;
-  }
-  
-  // Changer le pseudo
   changeUsername() {
     const newUsername = prompt('👋 Nouveau pseudo:', this.username);
     if (newUsername && newUsername.trim() !== '') {
@@ -464,7 +386,6 @@ class PostItSystem {
   }
 }
 
-// Initialiser le système au chargement de la page
 let postitSystem;
 document.addEventListener('DOMContentLoaded', () => {
   postitSystem = new PostItSystem();
