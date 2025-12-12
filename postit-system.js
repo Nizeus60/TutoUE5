@@ -12,6 +12,8 @@ class PostItSystem {
     this.database = null;
     this.firebaseReady = false;
     this.username = null;
+    this.isEditing = false; // Flag pour savoir si on édite un post-it
+    this.updateTimers = {}; // Timers pour debounce
     
     this.init();
   }
@@ -94,7 +96,11 @@ class PostItSystem {
       } else {
         this.postits = [];
       }
-      this.renderPostits();
+      
+      // Ne pas re-render si on est en train d'éditer un post-it
+      if (!this.isEditing) {
+        this.renderPostits();
+      }
     });
   }
   
@@ -396,7 +402,23 @@ class PostItSystem {
     textarea.className = 'postit-content';
     textarea.value = postit.content;
     textarea.placeholder = 'Écrivez votre note...';
-    textarea.oninput = (e) => this.updateContent(postit.id, e.target.value);
+    
+    // Quand on commence à éditer
+    textarea.onfocus = () => {
+      this.isEditing = true;
+    };
+    
+    // Quand on arrête d'éditer
+    textarea.onblur = () => {
+      this.isEditing = false;
+      // Forcer un render pour mettre à jour avec les changements des autres
+      setTimeout(() => this.renderPostits(), 100);
+    };
+    
+    // Mettre à jour le contenu
+    textarea.oninput = (e) => {
+      this.updateContent(postit.id, e.target.value);
+    };
     
     div.appendChild(header);
     div.appendChild(textarea);
