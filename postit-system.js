@@ -200,7 +200,7 @@ class PostItSystem {
     }
   }
   
-  // Mettre à jour le contenu
+  // Mettre à jour le contenu (avec debounce pour éviter trop d'updates Firebase)
   updateContent(id, content) {
     const postit = this.postits.find(p => p.id === id);
     if (postit) {
@@ -208,11 +208,25 @@ class PostItSystem {
       postit.lastEditedBy = this.username;
       postit.lastEditedAt = new Date().toISOString();
       
-      if (this.firebaseReady) {
-        this.savePostitFirebase(postit);
-      } else {
-        this.savePostitsLocal();
+      // Annuler le timer précédent
+      if (this.updateTimers && this.updateTimers[id]) {
+        clearTimeout(this.updateTimers[id]);
       }
+      
+      // Initialiser updateTimers si nécessaire
+      if (!this.updateTimers) {
+        this.updateTimers = {};
+      }
+      
+      // Attendre 500ms avant de sauvegarder (debounce)
+      this.updateTimers[id] = setTimeout(() => {
+        if (this.firebaseReady) {
+          this.savePostitFirebase(postit);
+        } else {
+          this.savePostitsLocal();
+        }
+        delete this.updateTimers[id];
+      }, 500);
     }
   }
   
@@ -277,15 +291,55 @@ class PostItSystem {
     }
   }
   
-  // Afficher tous les post-its de la page actuelle
+  // Afficher tous les post-its de la page actuelle (smart render)
   renderPostits() {
-    // Supprimer les anciens post-its
-    document.querySelectorAll('.postit').forEach(el => el.remove());
+    // Récupérer les IDs des post-its actuellement affichés
+    const existingIds = new Set();
+    document.querySelectorAll('.postit').forEach(el => {
+      existingIds.add(parseInt(el.getAttribute('data-postit-id')));
+    });
     
-    // Afficher les post-its de cette page
+    // Récupérer les IDs des post-its qui devraient être affichés
+    const currentIds = new Set(this.postits.map(p => p.id));
+    
+    // Supprimer les post-its qui ne sont plus dans la liste
+    document.querySelectorAll('.postit').forEach(el => {
+      const id = parseInt(el.getAttribute('data-postit-id'));
+      if (!currentIds.has(id)) {
+        el.remove();
+      }
+    });
+    
+    // Ajouter les nouveaux post-its
     this.postits.forEach(postit => {
-      const element = this.createPostitElement(postit);
-      document.body.appendChild(element);
+      if (!existingIds.has(postit.id)) {
+        const element = this.createPostitElement(postit);
+        document.body.appendChild(element);
+      } else {
+        // Mettre à jour seulement la couleur si elle a changé (pas le contenu pour éviter de perdre le focus)
+        const existingElement = document.querySelector(`[data-postit-id="${postit.id}"]`);
+        if (existingElement) {
+          // Update couleur
+          const colors = ['yellow', 'green', 'pink', 'blue', 'orange'];
+          colors.forEach(color => existingElement.classList.remove(color));
+          existingElement.classList.add(postit.color);
+          
+          // Update auteur si changé
+          const authorSpan = existingElement.querySelector('.postit-author');
+          if (authorSpan && postit.author) {
+            authorSpan.textContent = postit.author;
+            authorSpan.title = `Créé par ${postit.author}${postit.lastEditedBy ? `\nDernier edit: ${postit.lastEditedBy}` : ''}`;
+          }
+          
+          // Update contenu SEULEMENT si le textarea n'a pas le focus
+          const textarea = existingElement.querySelector('.postit-content');
+          if (textarea && document.activeElement !== textarea) {
+            if (textarea.value !== postit.content) {
+              textarea.value = postit.content;
+            }
+          }
+        }
+      }
     });
   }
   
@@ -305,6 +359,7 @@ class PostItSystem {
     // Info auteur (petit texte)
     if (postit.author) {
       const authorInfo = document.createElement('span');
+      authorInfo.className = 'postit-author';
       authorInfo.style.cssText = 'font-size: 9px; color: rgba(0,0,0,0.4); flex: 1; padding-left: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;';
       authorInfo.textContent = postit.author;
       authorInfo.title = `Créé par ${postit.author}${postit.lastEditedBy ? `\nDernier edit: ${postit.lastEditedBy}` : ''}`;

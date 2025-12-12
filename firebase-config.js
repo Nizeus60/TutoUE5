@@ -6,13 +6,13 @@
 // Tu les obtiendras en suivant le guide dans firebase-setup.md
 
 const firebaseConfig = {
-  apiKey: "AIzaSyBfvXTraWBv2c4hO9s7XH8Vaj-j9H4P_R0",
-  authDomain: "nizoz-studio-docs.firebaseapp.com",
-  databaseURL: "https://nizoz-studio-docs-default-rtdb.europe-west1.firebasedatabase.app",
-  projectId: "nizoz-studio-docs",
-  storageBucket: "nizoz-studio-docs.firebasestorage.app",
-  messagingSenderId: "53103731738",
-  appId: "1:53103731738:web:0be7fe8f2a40db0d379da3"
+  apiKey: "TON_API_KEY_ICI",
+  authDomain: "TON_PROJECT_ID.firebaseapp.com",
+  databaseURL: "https://TON_PROJECT_ID-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId: "TON_PROJECT_ID",
+  storageBucket: "TON_PROJECT_ID.appspot.com",
+  messagingSenderId: "TON_MESSAGING_SENDER_ID",
+  appId: "TON_APP_ID"
 };
 
 // Ne touche pas à ça
